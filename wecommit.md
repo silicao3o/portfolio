@@ -2,6 +2,13 @@
 
 Noshowping 프로젝트(숙박 중고 거래 서비스)
 
+## 사용된 기술
+- Language : Python, JavaScript
+- Framwork : FastAPI, React-Native
+- DB : PostgreSQL
+- ETC : Fly.io, GitHub Action, 
+
+
 ## 주요 개발 내용
 
 ### 1. 크롤링 자동화 파이프라인 구축 및 성능 최적화
