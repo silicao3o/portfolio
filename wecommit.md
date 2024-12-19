@@ -134,6 +134,7 @@ Noshowping 프로젝트(숙박 중고 거래 서비스)
       - 알림톡에 필요한 값들 기본 모델로 정의
         
    ```python
+   
    # core/service/solapi/models.py
 class ButtonType(Enum):
     WL = "WL"  # 웹링크
