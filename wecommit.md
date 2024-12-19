@@ -134,18 +134,15 @@ Noshowping 프로젝트(숙박 중고 거래 서비스)
       - 알림톡에 필요한 값들 기본 모델로 정의
         
    ```python
-   
    # core/service/solapi/models.py
 class ButtonType(Enum):
     WL = "WL"  # 웹링크
     AL = "AL"  # 앱링크
-
 class AlimtalkButton(BaseModel):
     button_type: ButtonType
     button_name: str
     link_mo: str
     link_pc: Optional[str] = None
-
 class BaseAlimtalkRequest(BaseModel):
     template_type: TemplateType
     to: str
@@ -160,7 +157,6 @@ class BaseAlimtalkRequest(BaseModel):
       class AlimtalkService:
     def __init__(self, solapi_service: SolapiService):
         self.solapi_service = solapi_service
-
     async def send_product_check(self, request: BaseAlimtalkRequest):
         return await self.solapi_service.send_alimtalk(request)
    ```
@@ -244,7 +240,7 @@ async def update_order(self, *, order: Order) -> None:
 
         command = CreateOrderCommand(**request.model_dump())
         updated_order = await usecase.update_order(command=command)
-        ...
+        (...)
    ```
 
 
