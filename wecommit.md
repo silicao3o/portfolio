@@ -132,6 +132,7 @@ Noshowping 프로젝트(숙박 중고 거래 서비스)
  - 해결 과정
    1. 모델 구조화
       - 알림톡에 필요한 값들 기본 모델로 정의
+        
    ```python
    # core/service/solapi/models.py
 class ButtonType(Enum):
@@ -150,8 +151,10 @@ class BaseAlimtalkRequest(BaseModel):
     variables: Dict[str, str]
     buttons: Optional[List[AlimtalkButton]] = None
     ```
+    
    2. 서비스 계층 분리
     - 알림톡 서비스 로직 통합
+    
     ```python
       class AlimtalkService:
     def __init__(self, solapi_service: SolapiService):
@@ -160,6 +163,7 @@ class BaseAlimtalkRequest(BaseModel):
     async def send_product_check(self, request: BaseAlimtalkRequest):
         return await self.solapi_service.send_alimtalk(request)
    ```
+
 - 개선된 점
   1. 코드 구조화
    - 모델, 서비스 계층 분리(프로젝트 패턴인 DDD패턴에 맞게 설계)
@@ -174,10 +178,12 @@ class BaseAlimtalkRequest(BaseModel):
 **주문 중복 생성 문제**
 
 1. 초기 상황
+
 ```
 173	114	4	ORDER_PENDING			2024-12-11 05:25:56.856	2024-12-11 05:25:56.856	order_1733894751121	제주 한라호텔 양도	300000
 172	114	4	ORDER_COMPLETED		25	2024-12-11 05:25:56.497	2024-12-11 05:26:10.581	order_1733894751121	제주 한라호텔 양도	300000
 ```
+
 - 동일한 origin_order_id에 대해 여러 주문 레코드가 생성됨 
 
 2. 원인
@@ -185,6 +191,7 @@ class BaseAlimtalkRequest(BaseModel):
  -> 중복 생성 원인
 
 3. 해결
+
 ```python
 async def update_order(self, *, order: Order) -> None:
     """Update order"""
@@ -194,11 +201,13 @@ async def update_order(self, *, order: Order) -> None:
     except Exception as e:
         raise Exception(f"Failed to update order: {str(e)}")
 ```
+
 - 기존 엔티티 업데이트 되도록 수정
 
 
 **TossPayments 중복 생성**
  1. 문제 상황
+    
 ```
 [DEBUG] Response status: 200
 [DEBUG] Response status: 400
@@ -206,12 +215,14 @@ async def update_order(self, *, order: Order) -> None:
 [DEBUG] Error: 400: 토스 결제 승인 실패: 이미 처리된 결제 입니다.
 [DEBUG] Error: 500: 결제 승인 처리 중 오류 발생: 400: 토스 결제 승인 실패: 이미 처리된 결제 입니다.
 ```
+
 - 중복으로 결제가 처리 됨.
 
 2. 원인
    Adapter 계층과 Service 계층에 중복되게 tosspayments 승인 api 호출
 
 3. 해결
+   
    ```python
    async def update_order(
         request: CreateOrderRequest,
@@ -234,6 +245,8 @@ async def update_order(self, *, order: Order) -> None:
         updated_order = await usecase.update_order(command=command)
         ...
    ```
+
+
 - 계층에 맞게 결제 승인 api 호출 adapter에만 구현
 
 
