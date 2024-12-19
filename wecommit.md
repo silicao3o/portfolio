@@ -129,66 +129,69 @@ Noshowping 프로젝트(숙박 중고 거래 서비스)
    - 중복 코드 존재
    - 순환 참조 문제 발생
    - 책임과 의존성이 명확하지 않음
- - 해결 과정
-   1. 모델 구조화
-      - 알림톡에 필요한 값들 기본 모델로 정의
-        
-   ```python
-   # core/service/solapi/models.py
+   - 
+# 코드 개선 사항
+### 1.1 모델 구조화
+- 알림톡에 필요한 값들 기본 모델로 정의
+
+```python
+# core/service/solapi/models.py
 class ButtonType(Enum):
     WL = "WL"  # 웹링크
     AL = "AL"  # 앱링크
+
 class AlimtalkButton(BaseModel):
     button_type: ButtonType
     button_name: str
     link_mo: str
     link_pc: Optional[str] = None
+
 class BaseAlimtalkRequest(BaseModel):
     template_type: TemplateType
     to: str
     variables: Dict[str, str]
     buttons: Optional[List[AlimtalkButton]] = None
-    ```
-    
-   2. 서비스 계층 분리
-    - 알림톡 서비스 로직 통합
-    
-    ```python
-      class AlimtalkService:
+```
+
+### 1.2 서비스 계층 분리
+- 알림톡 서비스 로직 통합
+
+```python
+class AlimtalkService:
     def __init__(self, solapi_service: SolapiService):
         self.solapi_service = solapi_service
+        
     async def send_product_check(self, request: BaseAlimtalkRequest):
         return await self.solapi_service.send_alimtalk(request)
-   ```
-
-- 개선된 점
-  1. 코드 구조화
-   - 모델, 서비스 계층 분리(프로젝트 패턴인 DDD패턴에 맞게 설계)
-   - 책임과 역할 명확
-  2. 재사용성 및 확장성
-   - 공통 모델을 통한 코드 재사용 가능
-   - 새로운 알림톡 기능 추가 용이
-  3. 유지보수성
-   - 순환 참조 제거로 코드 안정성 향상
-   - 모듈화를 통한 유지보수 용이
-
-**주문 중복 생성 문제**
-
-1. 초기 상황
-
-```
-173	114	4	ORDER_PENDING			2024-12-11 05:25:56.856	2024-12-11 05:25:56.856	order_1733894751121	제주 한라호텔 양도	300000
-172	114	4	ORDER_COMPLETED		25	2024-12-11 05:25:56.497	2024-12-11 05:26:10.581	order_1733894751121	제주 한라호텔 양도	300000
 ```
 
-- 동일한 origin_order_id에 대해 여러 주문 레코드가 생성됨 
+## 2. 개선된 점
 
-2. 원인
-- order 객체를 save하면서 새롭게 order가 생기면서 order_completed되는 로직
- -> 중복 생성 원인
+### 2.1 코드 구조화
+- 모델, 서비스 계층 분리(프로젝트 패턴인 DDD패턴에 맞게 설계)
+- 책임과 역할 명확
 
-3. 해결
+### 2.2 재사용성 및 확장성
+- 공통 모델을 통한 코드 재사용 가능
+- 새로운 알림톡 기능 추가 용이
 
+### 2.3 유지보수성
+- 순환 참조 제거로 코드 안정성 향상
+- 모듈화를 통한 유지보수 용이
+
+# 주문 중복 생성 문제
+
+## 1. 초기 상황
+```
+173 114 4 ORDER_PENDING          2024-12-11 05:25:56.856 2024-12-11 05:25:56.856 order_1733894751121 제주 한라호텔 양도 300000
+172 114 4 ORDER_COMPLETED    25  2024-12-11 05:25:56.497 2024-12-11 05:26:10.581 order_1733894751121 제주 한라호텔 양도 300000
+```
+- 동일한 origin_order_id에 대해 여러 주문 레코드가 생성됨
+
+## 2. 원인
+- order 객체를 save하면서 새롭게 order가 생기면서 order_completed되는 로직으로 인한 중복 생성
+
+## 3. 해결
 ```python
 async def update_order(self, *, order: Order) -> None:
     """Update order"""
@@ -198,13 +201,11 @@ async def update_order(self, *, order: Order) -> None:
     except Exception as e:
         raise Exception(f"Failed to update order: {str(e)}")
 ```
-
 - 기존 엔티티 업데이트 되도록 수정
 
+# TossPayments 중복 생성
 
-**TossPayments 중복 생성**
- 1. 문제 상황
-    
+## 1. 문제 상황
 ```
 [DEBUG] Response status: 200
 [DEBUG] Response status: 400
@@ -212,20 +213,18 @@ async def update_order(self, *, order: Order) -> None:
 [DEBUG] Error: 400: 토스 결제 승인 실패: 이미 처리된 결제 입니다.
 [DEBUG] Error: 500: 결제 승인 처리 중 오류 발생: 400: 토스 결제 승인 실패: 이미 처리된 결제 입니다.
 ```
+- 중복으로 결제가 처리됨
 
-- 중복으로 결제가 처리 됨.
+## 2. 원인
+- Adapter 계층과 Service 계층에 중복되게 tosspayments 승인 api 호출
 
-2. 원인
-   Adapter 계층과 Service 계층에 중복되게 tosspayments 승인 api 호출
-
-3. 해결
-   
-   ```python
-   async def update_order(
-        request: CreateOrderRequest,
-        usecase: OrderUseCase = Depends(Provide[Container.order_service]),
-        toss_payment_service: TossPaymentService = Depends(Provide[Container.toss_payment_service]),
-        alimtalk_sender: AlimtalkSenderPort = Depends(Provide[Container.alimtalk_service]),
+## 3. 해결
+```python
+async def update_order(
+    request: CreateOrderRequest,
+    usecase: OrderUseCase = Depends(Provide[Container.order_service]),
+    toss_payment_service: TossPaymentService = Depends(Provide[Container.toss_payment_service]),
+    alimtalk_sender: AlimtalkSenderPort = Depends(Provide[Container.alimtalk_service]),
 ):
     try:
         if (request.payment_type == PaymentType.NORMAL and
@@ -237,15 +236,10 @@ async def update_order(self, *, order: Order) -> None:
                 order_id=request.origin_order_id,
                 amount=request.amount
             )
-
         command = CreateOrderCommand(**request.model_dump())
         updated_order = await usecase.update_order(command=command)
-        (...)
-   ```
-
-
-- 계층에 맞게 결제 승인 api 호출 adapter에만 구현
-
+```
+- 계층에 맞게 결제 승인 api 호출을 adapter에만 구현
 
    
     
