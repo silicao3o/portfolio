@@ -1,6 +1,6 @@
-#FastAPI 프로젝트 아키텍처 가이드
+# FastAPI 프로젝트 아키텍처 가이드
 
-##목차
+## 목차
 1. [프로젝트 구조 개요](#프로젝트-구조-개요)
 2. [Domain Layer](#1-domain-layer)
    - [UseCase](#usecase)
@@ -16,7 +16,7 @@
 6. [데이터 흐름](#데이터-흐름)
 7. [주요 특징](#주요-특징)
 
-##프로젝트 구조 개요
+## 프로젝트 구조 개요
 
 ```
 app/
@@ -38,11 +38,11 @@ app/
     └── usecase/
 ```
 
-##1. Domain Layer
+## 1. Domain Layer
 
 도메인 계층은 비즈니스의 핵심 로직과 규칙을 포함합니다.
 
-###UseCase
+### UseCase
 
 ```python
 class ArticleUseCase(ABC):
