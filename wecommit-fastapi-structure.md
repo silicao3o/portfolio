@@ -288,7 +288,7 @@ class Container(containers.DeclarativeContainer):
    - 일관성 보장
    - 롤백 자동화
 
-이러한 아키텍처는 다음과 같은 이점을 제공합니다:
+# DDD패턴의 이점
 - 코드의 모듈성과 재사용성
 - 테스트 용이성
 - 유지보수 편의성
