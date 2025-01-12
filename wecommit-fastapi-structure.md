@@ -76,13 +76,13 @@ class ArticleUseCase(ABC):
         pass
 ```
 
-UseCase는 다음과 같은 역할을 합니다:
+UseCase는 다음과 같은 역할을 합니다
 - 비즈니스 요구사항을 추상화된 인터페이스로 정의
 - 필요한 의존성(repositories)을 명시적으로 선언
 - 각 비즈니스 기능의 입력(Command)과 출력(Response) 명세
 - 시스템이 수행해야 할 작업을 선언적으로 정의
 
-예를 들어, 게시글 생성 UseCase의 실제 구현은 다음과 같은 작업을 포함합니다:
+예를 들어, 게시글 생성 UseCase의 실제 구현은 다음과 같은 작업을 포함합니다
 1. Command를 통해 게시글 생성에 필요한 데이터 수신
 2. 판매자(Merchant) 존재 여부 확인
 3. 게시글 엔티티 생성
@@ -108,7 +108,7 @@ class Article(BaseEntity):
         )
 ```
 
-Entity는:
+Entity
 - 비즈니스 도메인 객체 정의
 - 데이터베이스 테이블과 매핑
 - 핵심 비즈니스 로직 포함
@@ -123,7 +123,7 @@ class CreateArticleCommand(BaseModel):
     service_product_data: Optional[dict] = None
 ```
 
-Command는:
+Command
 - 비즈니스 작업 실행을 위한 데이터 구조 정의
 - 유효성 검사 규칙 포함
 - 비즈니스 작업의 의도를 명확히 표현
@@ -141,7 +141,7 @@ class ArticleRepo(ABC):
         """Get article by id"""
 ```
 
-Repository Interface는:
+Repository Interface
 - 데이터 접근 추상화
 - 구현에 독립적인 인터페이스 정의
 - 도메인 객체의 영속성 관리 방식 정의
@@ -169,7 +169,7 @@ class ArticleService(ArticleUseCase):
         return await self.repository.save(article=article)
 ```
 
-Service는:
+Service
 - 비즈니스 유스케이스 구현
 - 트랜잭션 관리
 - 도메인 객체 조작
@@ -194,7 +194,7 @@ async def create_article(
     )
 ```
 
-API Routes는:
+API Routes
 - HTTP 요청 처리
 - 요청 데이터 검증
 - 유스케이스로 데이터 전달
@@ -208,7 +208,7 @@ class CreateArticleRequest(BaseModel):
     description: str = Field(..., description="설명")
 ```
 
-Request/Response Models는:
+Request/Response Models
 - API 요청/응답 데이터 구조 정의
 - 입력 데이터 검증 규칙 정의
 - API 문서화를 위한 메타데이터 제공
@@ -229,7 +229,7 @@ class ArticleSQLAlchemyRepos(ArticleRepo):
         return result.scalar_one_or_none()
 ```
 
-Repository Implementation은:
+Repository Implementation
 - 리포지토리 인터페이스 구현
 - 데이터베이스 작업 처리
 - ORM 사용
@@ -245,7 +245,7 @@ class Container(containers.DeclarativeContainer):
     )
 ```
 
-의존성 주입 설정은:
+의존성 주입 설정
 - 의존성 설정 및 관리
 - 컴포넌트 생명주기 관리
 - 서비스 인스턴스 제공
@@ -287,10 +287,3 @@ class Container(containers.DeclarativeContainer):
    - 선언적 트랜잭션 처리
    - 일관성 보장
    - 롤백 자동화
-
-# DDD패턴의 이점
-- 코드의 모듈성과 재사용성
-- 테스트 용이성
-- 유지보수 편의성
-- 확장성
-- 비즈니스 로직의 명확한 분리
