@@ -1,6 +1,6 @@
 # wecommit-projects
 
-Noshowping 프로젝트(숙박 중고 거래 서비스)
+Noshowping(숙박 중고 거래 서비스)
 
 ## 사용된 기술
 - Language : Python, TypeScript
