@@ -31,12 +31,9 @@ Noshowping 프로젝트(숙박 중고 거래 서비스)
 - Uploadcare 이미지 보안 기능 구현(URL Signed + JWT토큰 검증)
 
 ### 4. React-Native 모바일 개발
-- Screen 및 API 연동 개발
+- 퍼블리싱 및 기능 개발
 
-### 5. Next-auth
-- 카카오 로그인 구현
-
-### 6. QA
+### 5. QA
 - QA 리스트업 및 테스트 진행
 
 ## 트러블 슈팅
