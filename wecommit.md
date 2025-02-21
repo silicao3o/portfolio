@@ -254,5 +254,126 @@ async def update_order(
 ```
 - 계층에 맞게 결제 승인 api 호출을 adapter에만 구현
 
-# 토스페이먼츠 가상계좌 결제 상태 처리 트러블슈팅
+#### 토스페이먼츠 가상계좌 결제 상태 처리 트러블슈팅
 [토스페이먼츠 가상계좌 결제 상태 처리](https://velog.io/@silica_o3o/%ED%86%A0%EC%8A%A4-%ED%8E%98%EC%9D%B4%EB%A8%BC%EC%B8%A0-%ED%8A%B8%EB%9F%AC%EB%B8%94-%EC%8A%88%ED%8C%85)
+
+#### 판매글 작성 API 응답시간 줄이기
+**문제상황**
+- 판매글 작성 시, 로딩이 너무 긴 현상 발견
+- Postman API 테스트 시, 응답시간 10.75초
+
+**원인 및 접근방식**
+원인에 대해 2가지의 가설을 세우고 접근
+
+1. 이미지 업로드 시간이 크게 작용할 것이다.
+2. 작성 시, SQL로그에서 Article 업데이트가 중복으로 일어나기 때문이다.
+
+**해결**
+
+1번 원인 해결방법 
+- Article,Reservation,ServiceProduct 생성 트랜잭션에서 이미지 업로드 로직 분리
+- 이미지 업로드만 처리하는 API를 따로 개발
+- 프론트에서 Article 폼을 받을 때 이미지 업로드만 먼저 호출 후 서버에 이미지 저장
+- Reservation 테이블을 생성 후, 업로드 된 이미지 테이블 id를 받아 업데이트
+
+2번 원인 해결방법
+- 기존 코드에서 중복으로 처리되던 로직 수정
+```python
+# 3. ServiceProduct 생성 및 저장
+if command.service_product_data:
+    service_product = ServiceProduct.create(
+        article_id=saved_article.id,
+        **command.service_product_data
+    )
+    service_product = await self.service_product_repository.save(service_product)
+    if service_product:
+        saved_article.service_product = service_product
+        saved_article = await self.repository.save(article=saved_article)
+
+# 4. Reservation 및 ScreenShot 생성 및 저장
+if command.reservation_data:
+    reservation = Reservation.create(
+        article_id=saved_article.id,
+        **command.reservation_data
+    )
+    # 먼저 reservation을 저장하여 ID를 얻습니다
+    reservation = await self.reservation_repository.save(reservation)
+    if reservation:
+        # 5. ScreenShot 생성 및 저장
+        if command.reservation_data.get('reservation_image_urls'):
+            screen_shot = ScreenShot.create(
+                reservation_id=reservation.id,
+                image_urls=command.reservation_data['reservation_image_urls']
+            )
+            await self.screen_shot_repository.save(screen_shot)
+
+        saved_article.reservation = reservation
+        saved_article = await self.repository.save(article=saved_article)
+```
+-> service_product, reservation 생성 후 각각 업데이트 하는 로직 통합
+
+```python
+# 3. ServiceProduct 생성 및 저장
+if command.service_product_data:
+    service_product = ServiceProduct.create(
+        article_id=saved_article.id,
+        **command.service_product_data
+    )
+    service_product = await self.service_product_repository.save(service_product)
+    if service_product:
+        saved_article.service_product = service_product
+
+# 4. Reservation 및 ScreenShot 생성 및 저장
+if command.reservation_data:
+    reservation = Reservation.create(
+        article_id=saved_article.id,
+        **command.reservation_data
+    )
+    # 먼저 reservation을 저장하여 ID를 얻습니다
+    logging.warning("##################################### Reservation 저장")
+    reservation = await self.reservation_repository.save(reservation)
+
+    if command.reservation_data.get('screenshot_id'):
+        # 기존 screenshot을 조회
+        screenshot = await self.screen_shot_repository.get_by_id(command.reservation_data['screenshot_id'])
+
+        if screenshot:
+            # screenshot의 reservation_id 업데이트
+            screenshot = await self.screen_shot_repository.update_reservation_id(
+                screenshot_id=screenshot.id,
+                reservation_id=reservation.id
+            )
+
+    if reservation:
+        saved_article.reservation = reservation
+
+# 생성된 Service_Product 및 Reservation 을 Article 에 일괄 반영
+saved_article = await self.repository.save(article=saved_article)
+```
+
+**성과**
+- 2개 적용 시, 약 6.3초까지 API 응답시간 단축(4.4초 단축)
+
+기존 API 응답시간
+![image](https://github.com/user-attachments/assets/acfe1d29-75ec-462e-a2bd-3140888afb4b)
+
+로직 수정 후 API 응답시간
+![image](https://github.com/user-attachments/assets/27c830c9-738f-4c0a-b280-d27752cce9e6)
+
+**예상 외의 문제**
+- discord 웹훅 알림으로 인한 응답시간 증가
+- DB서버에서 트래픽이 발생하지 않으면 DB엔진이 다시 불러오는 시간이 필요
+
+**예상 외의 문제 해결**
+- Discord 웹훅 문제(0.4초 단축)
+웹훅에서 merchant_name을 기존에는 Article에서 Merchant 테이블로 조인 후 가져왔지만 Article 생성할 때 판매자 유효성 검사를 진행하여
+조인하지 않고 파라미터로 넘기는 것으로 로직 수정
+
+- DB엔진 실행 문제
+트래픽이 발생하면 나오지 않을 문제여서, 헬스체크를 하는 로직으로 해결해야하나 고민하였지만 훗날 자연스럽게 트래픽이 증가하면 해결되는 문제기 때문에 이번에는 헬스 체크 모니터링을 해주는 클라우드로 해결
+
+**최종 결과**
+
+평균 값 약 2.1~2.3초대 API 응답시간 반환
+![image](https://github.com/user-attachments/assets/7c481604-3174-411d-9c77-e198e29e2ecc)
+
