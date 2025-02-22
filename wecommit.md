@@ -1,6 +1,6 @@
-# wecommit-projects
+# Knowshoping(Wecommit)
 
-Noshowping(숙박 중고 거래 서비스)
+knowshowping[숙박 중고 거래 서비스](https://www.knowshowping.com/)
 
 ## 사용된 기술
 - Language : Python, TypeScript
