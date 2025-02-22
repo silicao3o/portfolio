@@ -257,6 +257,9 @@ async def update_order(
 #### 토스페이먼츠 가상계좌 결제 상태 처리 트러블슈팅
 [토스페이먼츠 가상계좌 결제 상태 처리](https://velog.io/@silica_o3o/%ED%86%A0%EC%8A%A4-%ED%8E%98%EC%9D%B4%EB%A8%BC%EC%B8%A0-%ED%8A%B8%EB%9F%AC%EB%B8%94-%EC%8A%88%ED%8C%85)
 
+#### 결제 동시성 문제 처리
+[결제 동시성 문제 처리](https://velog.io/@silica_o3o/%EB%8F%99%EC%8B%9C-%EA%B2%B0%EC%A0%9C-%EB%AC%B8%EC%A0%9C-%ED%95%B4%EA%B2%B0)
+
 #### 판매글 작성 API 응답시간 줄이기
 **문제상황**
 - 판매글 작성 시, 로딩이 너무 긴 현상 발견
